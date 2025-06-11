@@ -1,7 +1,7 @@
 import { ADGUARD_URL, APKPURE_URL, COMMON_FETCH_OPTS, DATA_PATH, SPOTIFY_REPO_BASE_URL } from "~/constants";
 import { parsePackages } from "~/package";
 import { Checker, Version } from "~/types";
-import { compareVersionString, downloadVersionFile, isSimilar } from "~/version";
+import { compareVersionString, isSimilar } from "~/version";
 
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";

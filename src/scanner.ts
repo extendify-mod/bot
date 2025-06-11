@@ -1,5 +1,5 @@
 import { SPOTIFY_INSTALLER_BASE_URL } from "~/constants";
-import { CheckUrlResult, Version } from "~/types";
+import { Version } from "~/types";
 
 import JSZip from "jszip";
 import pLimit from "p-limit";

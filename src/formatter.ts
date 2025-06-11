@@ -1,6 +1,5 @@
+import { MESSAGE_CHAR_LIMIT } from "~/constants";
 import { DiffResult, Version } from "~/types";
-
-import { MESSAGE_CHAR_LIMIT } from "./constants";
 
 export function formatReleaseMessage(versions: Version[]): string {
   let content = "## New versions available!\n";

@@ -25,32 +25,6 @@ client.on("ready", () => {
 
 client.connect();
 
-// (async () => {
-//   const file = await downloadVersionFile({
-//     arch: "arm64",
-//     channel: "MS Store",
-//     os: "Windows",
-//     url: "http://tlu.dl.delivery.mp.microsoft.com/filestreamingservice/files/62277664-add4-4179-89ec-ec46a59ba7ef?P1=1749666561&P2=404&P3=2&P4=kVSZy3kGCyS9es0GRbHDd2oWLLAM4%2bYGkMMq2gS0vfqHzLq2DwQ4PkNvdKA53kRvsxlKoLbOGE8e2MX5ZV6sbA%3d%3d",
-//     version: "1.265.255.0"
-//   });
-//   if (file) {
-//     readWindowsStrings(file);
-//   }
-// })();
-
-// (async () => {
-//   const file = await downloadVersionFile({
-//     arch: "AnyCPU",
-//     channel: "APKPure",
-//     os: "Android",
-//     url: "https://d.apkpure.com/b/XAPK/com.spotify.music?version=latest",
-//     version: "9.0.54.80"
-//   });
-//   if (file) {
-//     readAndroidStrings(file);
-//   }
-// })();
-
 async function sendReleaseMessage(checker: Checker, batch: Version[]) {
   if (batch.length === 0) {
     return;
