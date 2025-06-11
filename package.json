@@ -1,0 +1,29 @@
+{
+  "name": "extendify-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node build.mjs && node --env-file=.env dist/index.js",
+    "dev": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node build.mjs watch\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "app-info-parser": "^1.1.6",
+    "esbuild": "^0.25.5",
+    "js-apk-parser": "^0.0.3",
+    "jszip": "^3.10.1",
+    "node-apk": "^1.2.1",
+    "oceanic.js": "^1.12.0",
+    "p-limit": "^6.2.0",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsc-watch": "^7.1.1"
+  }
+}

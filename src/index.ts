@@ -1,0 +1,139 @@
+import { getNewVersions } from "~/checker";
+import { DEVELOPMENT } from "~/constants";
+import { formatDiffMessage, formatReleaseMessage } from "~/formatter";
+import { scanInstallers } from "~/scanner";
+import { diffTranslations } from "~/strings";
+import { Checker, DiffResult, TranslationPlatform, Version } from "~/types";
+import { downloadVersionFile } from "~/version";
+
+import { AnyTextableGuildChannel, Client } from "oceanic.js";
+
+const client = new Client({
+  auth: `Bot ${process.env.DISCORD_TOKEN}`,
+  gateway: {
+    intents: 0,
+    compress: false
+  }
+});
+
+client.on("ready", () => {
+  console.log("Ready");
+
+  sendMessages();
+  setInterval(sendMessages, (DEVELOPMENT ? 1 : 5) * 60 * 1000);
+});
+
+client.connect();
+
+// (async () => {
+//   const file = await downloadVersionFile({
+//     arch: "arm64",
+//     channel: "MS Store",
+//     os: "Windows",
+//     url: "http://tlu.dl.delivery.mp.microsoft.com/filestreamingservice/files/62277664-add4-4179-89ec-ec46a59ba7ef?P1=1749666561&P2=404&P3=2&P4=kVSZy3kGCyS9es0GRbHDd2oWLLAM4%2bYGkMMq2gS0vfqHzLq2DwQ4PkNvdKA53kRvsxlKoLbOGE8e2MX5ZV6sbA%3d%3d",
+//     version: "1.265.255.0"
+//   });
+//   if (file) {
+//     readWindowsStrings(file);
+//   }
+// })();
+
+// (async () => {
+//   const file = await downloadVersionFile({
+//     arch: "AnyCPU",
+//     channel: "APKPure",
+//     os: "Android",
+//     url: "https://d.apkpure.com/b/XAPK/com.spotify.music?version=latest",
+//     version: "9.0.54.80"
+//   });
+//   if (file) {
+//     readAndroidStrings(file);
+//   }
+// })();
+
+async function sendReleaseMessage(checker: Checker, batch: Version[]) {
+  if (batch.length === 0) {
+    return;
+  }
+
+  const channel = await client.rest.channels.get<AnyTextableGuildChannel>(process.env[`${checker.toUpperCase()}_RELEASE_CHANNEL`]!);
+  if (!channel) {
+    console.error(`No release channel found for ${checker}`);
+    return;
+  }
+
+  const role = process.env[`${checker.toUpperCase()}_PING_ROLE`];
+
+  await channel.createMessage({
+    content: `${formatReleaseMessage(batch)}\n<@&${role}>`
+  });
+}
+
+async function sendDiffMessage(platform: TranslationPlatform, diff: DiffResult) {
+  const channel = await client.rest.channels.get<AnyTextableGuildChannel>(process.env[`${platform.toUpperCase()}_STRINGS_CHANNEL`]!);
+  if (!channel) {
+    console.error(`No strings channel found for ${platform}`);
+    return;
+  }
+
+  const role = process.env[`${platform.toUpperCase()}_STRINGS_ROLE`];
+  const messages = formatDiffMessage(diff);
+  messages[0] += `\n<@&${role}>`;
+
+  for (const message of formatDiffMessage(diff)) {
+    await channel.createMessage({
+      content: message
+    });
+  }
+}
+
+async function sendMessages() {
+  const versions = await getNewVersions();
+
+  for (const checker in versions) {
+    const batch = versions[checker];
+    await sendReleaseMessage(checker as Checker, batch);
+  }
+
+  if (versions.windows.length > 0) {
+    const windowsFile = await downloadVersionFile(versions.windows[0]);
+    if (windowsFile) {
+      const installers = await scanInstallers(windowsFile);
+      const versions = installers.reduce<Record<Checker, Version[]>>(
+        (acc, version) => {
+          const os = version.os.toLowerCase() as Checker;
+          if (!acc[os]) {
+            acc[os] = [];
+          }
+          acc[os].push(version);
+          return acc;
+        },
+        {
+          windows: [],
+          linux: [],
+          android: [],
+          macos: []
+        }
+      );
+
+      for (const checker in versions) {
+        await sendReleaseMessage(checker as Checker, versions[checker]);
+      }
+
+      const translations = await diffTranslations("desktop", windowsFile);
+      if (translations) {
+        await sendDiffMessage("desktop", translations);
+      }
+    }
+  }
+
+  if (versions.android.length > 0) {
+    const androidFile = await downloadVersionFile(versions.android[0]);
+    if (androidFile) {
+      const translations = await diffTranslations("mobile", androidFile);
+      if (translations) {
+        await sendDiffMessage("mobile", translations);
+      }
+    }
+  }
+}
