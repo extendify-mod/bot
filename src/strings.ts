@@ -121,9 +121,18 @@ async function readAndroidStrings(xapk: Blob): Promise<Record<string, string>> {
   writeFileSync(resourcesPath, await arsc.async("uint8array"));
 
   return new Promise((resolve) => {
-    const extractor = spawn("java", ["-jar", path.join(process.cwd(), "data/arscstringextractor.jar"), resourcesPath, translationsPath], {
-      stdio: "inherit"
-    });
+    const extractor = spawn(
+      process.env.JAVA_EXECUTABLE ?? "java",
+      [
+        "-jar",
+        process.env.STRING_EXTRACTOR_PATH ?? path.join(process.cwd(), "data/arscstringextractor.jar"),
+        resourcesPath,
+        translationsPath
+      ],
+      {
+        stdio: "inherit"
+      }
+    );
     extractor.on("close", () => {
       resolve(JSON.parse(readFileSync(translationsPath).toString()));
     });
