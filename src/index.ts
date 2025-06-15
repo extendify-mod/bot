@@ -51,10 +51,9 @@ async function sendDiffMessage(platform: TranslationPlatform, diff: DiffResult) 
   }
 
   const role = process.env[`${platform.toUpperCase()}_STRINGS_ROLE`];
-  const messages = formatDiffMessage(diff);
-  messages[0] += `\n<@&${role}>`;
+  const messages = [`## New Strings Available!\n<@&${role}>`, ...formatDiffMessage(diff)];
 
-  for (const message of formatDiffMessage(diff)) {
+  for (const message of messages) {
     await channel.createMessage({
       content: message
     });

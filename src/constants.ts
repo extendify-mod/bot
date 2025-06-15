@@ -1,6 +1,8 @@
 import path from "path";
 
 export const DEVELOPMENT = process.argv.includes("dev");
+export const WRITE_NEW_TRANSLATIONS = new Boolean(process.env.WRITE_NEW_TRANSLATIONS ?? true);
+
 export const DATA_PATH = path.join(process.cwd(), "data");
 export const MESSAGE_CHAR_LIMIT = 2000;
 

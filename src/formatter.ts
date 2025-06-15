@@ -44,7 +44,7 @@ export function formatDiffMessage(diff: DiffResult): string[] {
   }
 
   if (Object.keys(diff.changed).length !== 0) {
-    const lines = Object.entries(diff.changed).map((e) => `- ${e[0]}: ${e[1].left}\n+ ${e[0]}: ${e[1]}`);
+    const lines = Object.entries(diff.changed).map((e) => `- ${e[0]}: ${e[1].left}\n+ ${e[0]}: ${e[1].right}`);
     messages = messages.concat(splitMessage("Changed", lines));
   }
 

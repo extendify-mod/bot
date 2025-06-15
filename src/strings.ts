@@ -1,4 +1,4 @@
-import { DATA_PATH } from "~/constants";
+import { DATA_PATH, WRITE_NEW_TRANSLATIONS } from "~/constants";
 import { DiffResult, TranslationPlatform } from "~/types";
 
 import { spawn } from "child_process";
@@ -21,8 +21,8 @@ function loadTranslations(platform: TranslationPlatform): Record<string, string>
 }
 
 export async function diffTranslations(platform: TranslationPlatform, blob: Blob): Promise<DiffResult | null> {
-  const strings = platform === "desktop" ? await readWindowsStrings(blob) : await readAndroidStrings(blob);
   const oldStrings = loadTranslations(platform);
+  const strings = platform === "desktop" ? await readWindowsStrings(blob) : await readAndroidStrings(blob);
   saveTranslations(platform, strings);
 
   if (Object.keys(oldStrings).length > 0) {
