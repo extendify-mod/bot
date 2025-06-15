@@ -13,11 +13,8 @@
   "license": "MIT",
   "dependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
-    "app-info-parser": "^1.1.6",
     "esbuild": "^0.25.5",
-    "js-apk-parser": "^0.0.3",
     "jszip": "^3.10.1",
-    "node-apk": "^1.2.1",
     "oceanic.js": "^1.12.0",
     "p-limit": "^6.2.0",
     "typescript": "^5.8.3"
