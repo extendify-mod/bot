@@ -154,39 +154,43 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
   };
 
   for (const checker in checkers) {
-    const newVersions: Version[] = [];
-    const batch = await getLatestVersions(checker as Checker);
-    const previousBatch = getPreviousBatch(checker as Checker);
+    try {
+      const newVersions: Version[] = [];
+      const batch = await getLatestVersions(checker as Checker);
+      const previousBatch = getPreviousBatch(checker as Checker);
 
-    if (batch.length === 0) {
-      continue;
-    }
-
-    for (const version of batch) {
-      let isNewer = false;
-      let foundAny = false;
-
-      for (const oldVersion of previousBatch) {
-        if (!isSimilar(version, oldVersion)) {
-          continue;
-        }
-
-        if (compareVersionString(version.version, oldVersion.version) === "newer") {
-          isNewer = true;
-        }
-
-        foundAny = true;
-        break;
+      if (batch.length === 0) {
+        continue;
       }
 
-      if (isNewer || !foundAny) {
-        newVersions.push(version);
+      for (const version of batch) {
+        let isNewer = false;
+        let foundAny = false;
+
+        for (const oldVersion of previousBatch) {
+          if (!isSimilar(version, oldVersion)) {
+            continue;
+          }
+
+          if (compareVersionString(version.version, oldVersion.version) === "newer") {
+            isNewer = true;
+          }
+
+          foundAny = true;
+          break;
+        }
+
+        if (isNewer || !foundAny) {
+          newVersions.push(version);
+        }
       }
+
+      saveBatch(checker as Checker, batch);
+
+      result[checker] = newVersions;
+    } catch (e) {
+      console.error(`Error while running checker ${checker}:`, (e as Error).message);
     }
-
-    saveBatch(checker as Checker, batch);
-
-    result[checker] = newVersions;
   }
 
   return result;
