@@ -4,7 +4,7 @@ import { DiffResult, Version } from "~/types";
 export function formatReleaseMessage(versions: Version[]): string {
   let content = "## New versions available!\n";
   for (const version of versions) {
-    content += `- ${version.channel}/${version.version}: ${version.arch} (${version.os}) [[**Download**]](<${version.url}>)\n`;
+    content += `- ${version.channel}/${version.version}: ${version.arch} (${version.os}) [**[Download]**](<${version.url}>)\n`;
   }
   return content;
 }
