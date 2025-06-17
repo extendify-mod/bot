@@ -158,6 +158,7 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
       const newVersions: Version[] = [];
       const batch = await getLatestVersions(checker as Checker);
       const previousBatch = getPreviousBatch(checker as Checker);
+      let anyNew = false;
 
       if (batch.length === 0) {
         continue;
@@ -181,13 +182,15 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
         }
 
         if (isNewer || !foundAny) {
+          anyNew = true;
           newVersions.push(version);
         }
       }
 
-      saveBatch(checker as Checker, batch);
-
-      result[checker] = newVersions;
+      if (anyNew) {
+        saveBatch(checker as Checker, batch);
+        result[checker] = newVersions;
+      }
     } catch (e) {
       console.error(`Error while running checker ${checker}:`, (e as Error).message);
     }
