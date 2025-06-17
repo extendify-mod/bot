@@ -174,12 +174,8 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
           }
 
           const comparison = compareVersionString(version.version, oldVersion.version);
-          if (comparison === "newer") {
-            isNewer = true;
-            newBatch.push(version);
-          } else {
-            newBatch.push(oldVersion);
-          }
+          isNewer = comparison === "newer";
+          newBatch.push(isNewer ? version : oldVersion);
 
           foundAny = true;
           break;
