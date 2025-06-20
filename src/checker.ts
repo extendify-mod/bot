@@ -1,4 +1,4 @@
-import { ADGUARD_URL, APKPURE_URL, COMMON_FETCH_OPTS, DATA_PATH, SPOTIFY_REPO_BASE_URL } from "~/constants";
+import { ADGUARD_URL, APKPURE_URL, COMMON_FETCH_OPTS, DATA_PATH, DEVELOPMENT, SPOTIFY_REPO_BASE_URL } from "~/constants";
 import { parsePackages } from "~/package";
 import { Checker, Version } from "~/types";
 import { compareVersionString, isSimilar } from "~/version";
@@ -124,6 +124,7 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
     return result;
   },
   macos: async () => {
+    // Empty here because we scan for MacOS installers later
     return [];
   }
 };
@@ -175,7 +176,9 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
 
           const comparison = compareVersionString(version.version, oldVersion.version);
           isNewer = comparison === "newer";
-          newBatch.push(isNewer ? version : oldVersion);
+          if (!isNewer) {
+            newBatch.push(oldVersion);
+          }
 
           foundAny = true;
           break;
@@ -183,6 +186,7 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
 
         if (isNewer || !foundAny) {
           newVersions.push(version);
+          newBatch.push(version);
         }
       }
 
