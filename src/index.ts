@@ -15,12 +15,15 @@ const client = new Client({
     compress: false
   }
 });
+let interval: NodeJS.Timeout | null = null;
 
 client.on("ready", () => {
   console.log("Ready");
 
-  sendMessages();
-  setInterval(sendMessages, (DEVELOPMENT ? 1 : 5) * 60 * 1000);
+  if (!interval) {
+    sendMessages();
+    interval = setInterval(sendMessages, (DEVELOPMENT ? 1 : 5) * 60 * 1000);
+  }
 });
 
 client.connect();
