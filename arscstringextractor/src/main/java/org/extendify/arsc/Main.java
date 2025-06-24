@@ -24,7 +24,7 @@ public class Main {
         PackageChunk pkg = table.getPackages().iterator().next();
 
         for (TypeChunk typeChunk : pkg.getTypeChunks()) {
-            if (!typeChunk.getTypeName().equals("string")) {
+            if (!typeChunk.getTypeName().equals("string") || !typeChunk.getConfiguration().languageString().equals("en")) {
                 continue;
             }
 
