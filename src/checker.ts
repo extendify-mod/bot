@@ -1,4 +1,4 @@
-import { ADGUARD_URL, APKPURE_URL, COMMON_FETCH_OPTS, DATA_PATH, DEVELOPMENT, SPOTIFY_REPO_BASE_URL } from "~/constants";
+import { ADGUARD_URL, APTOID_URL, COMMON_FETCH_OPTS, DATA_PATH, DEVELOPMENT, SPOTIFY_REPO_BASE_URL } from "~/constants";
 import { parsePackages } from "~/package";
 import { Checker, Version } from "~/types";
 import { compareVersionString, isSimilar } from "~/version";
@@ -8,34 +8,35 @@ import path from "path";
 
 const checkers: Record<Checker, () => Promise<Version[]>> = {
   android: async () => {
-    const response = await fetch(APKPURE_URL, {
+    const response = await fetch(APTOID_URL, {
       method: "GET",
       ...COMMON_FETCH_OPTS
     });
 
-    if (!response.ok || !response.headers.has("content-disposition")) {
+    if (!response.ok) {
       console.log("Couldn't retreive latest app info for Android");
       return [];
     }
 
-    const content = response.headers.get("content-disposition")!;
-    const match = content.match(/Podcasts_(.*?)_APKPure/);
+    const data: any = await response.json();
+    const [app] = data.datalist.list;
 
-    if (match && match.length > 1) {
-      const version = match[1];
-      console.log(`Added new Android version ${version}`);
-      return [
-        {
-          arch: "AnyCPU",
-          channel: "APKPure",
-          os: "Android",
-          url: APKPURE_URL,
-          version
-        }
-      ];
+    if (!app) {
+      console.log("No results found for Spotify app");
+      return [];
     }
 
-    return [];
+    console.log(`Added new Android version ${app.file.vername} from Aptoid`);
+
+    return [
+      {
+        arch: "AnyCPU",
+        channel: "Aptoid",
+        os: "Android",
+        url: app.file.path,
+        version: app.file.vername
+      }
+    ];
   },
   linux: async () => {
     const result: Version[] = [];

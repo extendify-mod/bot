@@ -101,15 +101,8 @@ async function readWindowsStrings(appx: Blob): Promise<Record<string, string>> {
   return strings;
 }
 
-async function readAndroidStrings(xapk: Blob): Promise<Record<string, string>> {
-  const zip = await JSZip.loadAsync(await xapk.bytes());
-  const mainApk = zip.file("com.spotify.music.apk");
-  if (!mainApk) {
-    console.error("Couldn't find main APK file inside of XAPK archive");
-    return {};
-  }
-
-  const apk = await JSZip.loadAsync(await mainApk.async("uint8array"));
+async function readAndroidStrings(apkBlob: Blob): Promise<Record<string, string>> {
+  const apk = await JSZip.loadAsync(await apkBlob.bytes());
   const arsc = apk.file("resources.arsc");
   if (!arsc) {
     console.error("Couldn't find ARSC file in APK archive");
