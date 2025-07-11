@@ -1,4 +1,4 @@
-import { ADGUARD_URL, APTOID_URL, COMMON_FETCH_OPTS, DATA_PATH, DEVELOPMENT, SPOTIFY_REPO_BASE_URL } from "~/constants";
+import { ADGUARD_URL, APTOID_URL, COMMON_FETCH_OPTS, DATA_PATH, SPOTIFY_REPO_BASE_URL } from "~/constants";
 import { parsePackages } from "~/package";
 import { Checker, Version } from "~/types";
 import { compareVersionString, isSimilar } from "~/version";
@@ -6,8 +6,10 @@ import { compareVersionString, isSimilar } from "~/version";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 
-const checkers: Record<Checker, () => Promise<Version[]>> = {
-  android: async () => {
+type CheckerFunction = (() => Promise<Version[]>) & { ratelimited?: boolean; timeout?: NodeJS.Timeout };
+
+const checkers: Record<Checker, CheckerFunction> = {
+  async android() {
     const response = await fetch(APTOID_URL, {
       method: "GET",
       ...COMMON_FETCH_OPTS
@@ -15,6 +17,7 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
 
     if (!response.ok) {
       console.log("Couldn't retreive latest app info for Android");
+      this.android.ratelimited = true;
       return [];
     }
 
@@ -23,6 +26,7 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
 
     if (!app) {
       console.log("No results found for Spotify app");
+      this.android.ratelimited = true;
       return [];
     }
 
@@ -38,7 +42,7 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
       }
     ];
   },
-  linux: async () => {
+  async linux() {
     const result: Version[] = [];
 
     for (const channel of ["stable", "testing"]) {
@@ -51,6 +55,7 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
 
         if (!response.ok) {
           console.log(`Couldn't retreive latest app info for Linux (channel ${channel}, arch ${arch})`);
+          this.linux.ratelimited = true;
           continue;
         }
 
@@ -75,7 +80,7 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
 
     return result;
   },
-  windows: async () => {
+  async windows() {
     const result: Version[] = [];
 
     const response = await fetch(ADGUARD_URL, {
@@ -94,12 +99,14 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
 
     if (!response.ok) {
       console.log("Couldn't retreive MS Store info from AdGuard");
+      this.windows.ratelimited = true;
       return [];
     }
 
     const content = await response.text();
     if (content.includes("The server returned an empty list")) {
       console.log("Ratelimited by AdGuard");
+      this.windows.ratelimited = true;
       return [];
     }
 
@@ -124,15 +131,11 @@ const checkers: Record<Checker, () => Promise<Version[]>> = {
 
     return result;
   },
-  macos: async () => {
+  async macos() {
     // Empty here because we scan for MacOS installers later
     return [];
   }
 };
-
-async function getLatestVersions(checker: Checker): Promise<Version[]> {
-  return await checkers[checker]();
-}
 
 function getPreviousBatch(checker: Checker): Version[] {
   const batchPath = path.join(DATA_PATH, checker + "_batch.json");
@@ -155,11 +158,27 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
     macos: []
   };
 
-  for (const checker in checkers) {
+  for (const checkerId in checkers) {
+    const checker: CheckerFunction = checkers[checkerId];
+
     try {
+      if (checker.ratelimited) {
+        if (!checker.timeout) {
+          console.log(`Started ratelimit protection for ${checkerId}`);
+          checker.timeout = setTimeout(
+            () => {
+              checker.ratelimited = false;
+              checker.timeout = undefined;
+            },
+            60.1 * 60 * 1000
+          );
+        }
+        continue;
+      }
+
       const newVersions: Version[] = [];
-      const batch = await getLatestVersions(checker as Checker);
-      const previousBatch = getPreviousBatch(checker as Checker);
+      const batch = await checker();
+      const previousBatch = getPreviousBatch(checkerId as Checker);
       const newBatch: Version[] = [];
 
       if (batch.length === 0) {
@@ -191,11 +210,11 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
         }
       }
 
-      saveBatch(checker as Checker, newBatch);
+      saveBatch(checkerId as Checker, newBatch);
 
-      result[checker] = newVersions;
+      result[checkerId] = newVersions;
     } catch (e) {
-      console.error(`Error while running checker ${checker}:`, (e as Error).message);
+      console.error(`Error while running checker ${checkerId}:`, (e as Error).message);
     }
   }
 

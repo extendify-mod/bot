@@ -1,4 +1,4 @@
-import { DATA_PATH, WRITE_NEW_TRANSLATIONS } from "~/constants";
+import { DATA_PATH } from "~/constants";
 import { DiffResult, TranslationPlatform } from "~/types";
 
 import { spawn } from "child_process";
