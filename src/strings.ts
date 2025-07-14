@@ -25,7 +25,7 @@ export async function diffTranslations(platform: TranslationPlatform, blob: Blob
   const strings = platform === "desktop" ? await readWindowsStrings(blob) : await readAndroidStrings(blob);
   saveTranslations(platform, strings);
 
-  if (Object.keys(oldStrings).length > 0) {
+  if (Object.keys(oldStrings).length > 0 && Object.keys(strings).length > 0) {
     return diffObjects(oldStrings, strings);
   }
 
