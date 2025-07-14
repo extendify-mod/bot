@@ -17,7 +17,7 @@ const checkers: Record<Checker, CheckerFunction> = {
 
     if (!response.ok) {
       console.log("Couldn't retreive latest app info for Android");
-      this.android.ratelimited = true;
+      checkers.android.ratelimited = true;
       return [];
     }
 
@@ -26,7 +26,7 @@ const checkers: Record<Checker, CheckerFunction> = {
 
     if (!app) {
       console.log("No results found for Spotify app");
-      this.android.ratelimited = true;
+      checkers.android.ratelimited = true;
       return [];
     }
 
@@ -55,7 +55,7 @@ const checkers: Record<Checker, CheckerFunction> = {
 
         if (!response.ok) {
           console.log(`Couldn't retreive latest app info for Linux (channel ${channel}, arch ${arch})`);
-          this.linux.ratelimited = true;
+          checkers.linux.ratelimited = true;
           continue;
         }
 
@@ -99,14 +99,14 @@ const checkers: Record<Checker, CheckerFunction> = {
 
     if (!response.ok) {
       console.log("Couldn't retreive MS Store info from AdGuard");
-      this.windows.ratelimited = true;
+      checkers.windows.ratelimited = true;
       return [];
     }
 
     const content = await response.text();
     if (content.includes("The server returned an empty list")) {
       console.log("Ratelimited by AdGuard");
-      this.windows.ratelimited = true;
+      checkers.windows.ratelimited = true;
       return [];
     }
 
