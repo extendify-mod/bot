@@ -1,139 +1,144 @@
-import { ADGUARD_URL, APTOID_URL, COMMON_FETCH_OPTS, DATA_PATH, SPOTIFY_REPO_BASE_URL } from "~/constants";
+import { ADGUARD_URL, APTOIDE_URL, COMMON_FETCH_OPTS, DATA_PATH, SPOTIFY_REPO_BASE_URL } from "~/constants";
 import { parsePackages } from "~/package";
-import { Checker, Version } from "~/types";
+import { Checker, CheckerFunction, Version } from "~/types";
 import { compareVersionString, isSimilar } from "~/version";
 
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 
-type CheckerFunction = (() => Promise<Version[]>) & { ratelimited?: boolean; timeout?: NodeJS.Timeout };
-
 const checkers: Record<Checker, CheckerFunction> = {
-  async android() {
-    const response = await fetch(APTOID_URL, {
-      method: "GET",
-      ...COMMON_FETCH_OPTS
-    });
+  android: {
+    async callback() {
+      const response = await fetch(APTOIDE_URL, {
+        method: "GET",
+        ...COMMON_FETCH_OPTS
+      });
 
-    if (!response.ok) {
-      console.log("Couldn't retreive latest app info for Android");
-      checkers.android.ratelimited = true;
-      return [];
-    }
-
-    const data: any = await response.json();
-    const [app] = data.datalist.list;
-
-    if (!app) {
-      console.log("No results found for Spotify app");
-      checkers.android.ratelimited = true;
-      return [];
-    }
-
-    console.log(`Added new Android version ${app.file.vername} from Aptoid`);
-
-    return [
-      {
-        arch: "AnyCPU",
-        channel: "Aptoid",
-        os: "Android",
-        url: app.file.path,
-        version: app.file.vername
+      if (!response.ok) {
+        console.log("Couldn't retreive latest app info for Android");
+        this.ratelimited = true;
+        return [];
       }
-    ];
+
+      const data: any = await response.json();
+      const [app] = data?.datalist?.list ?? [];
+
+      if (!app) {
+        console.log("No results found for Spotify app");
+        this.ratelimited = true;
+        return [];
+      }
+
+      console.log(`Added new Android version ${app.file.vername} from Aptoid`);
+
+      return [
+        {
+          arch: "AnyCPU",
+          channel: "Aptoid",
+          os: "Android",
+          url: app.file.path,
+          version: app.file.vername
+        }
+      ];
+    }
   },
-  async linux() {
-    const result: Version[] = [];
+  linux: {
+    async callback() {
+      const result: Version[] = [];
 
-    for (const channel of ["stable", "testing"]) {
-      for (const arch of ["amd64", "i386"]) {
-        const url = `${SPOTIFY_REPO_BASE_URL}/dists/${channel}/non-free/binary-${arch}/Packages`;
-        const response = await fetch(url, {
-          method: "GET",
-          ...COMMON_FETCH_OPTS
-        });
+      for (const channel of ["stable", "testing"]) {
+        for (const arch of ["amd64", "i386"]) {
+          const url = `${SPOTIFY_REPO_BASE_URL}/dists/${channel}/non-free/binary-${arch}/Packages`;
+          const response = await fetch(url, {
+            method: "GET",
+            ...COMMON_FETCH_OPTS
+          });
 
-        if (!response.ok) {
-          console.log(`Couldn't retreive latest app info for Linux (channel ${channel}, arch ${arch})`);
-          checkers.linux.ratelimited = true;
+          if (!response.ok) {
+            console.log(`Couldn't retreive latest app info for Linux (channel ${channel}, arch ${arch})`);
+            checkers.linux.ratelimited = true;
+            continue;
+          }
+
+          const pkg = parsePackages(await response.text()).filter((v) => v.package === "spotify-client")[0];
+          if (!pkg) {
+            console.log(`Empty package at channel ${channel} for arch ${arch}`);
+            continue;
+          }
+
+          const version = pkg.version.split(":")[1];
+          result.push({
+            arch,
+            channel,
+            os: "Linux",
+            url: `${SPOTIFY_REPO_BASE_URL}/${pkg.filename}`,
+            version
+          });
+
+          console.log(`Added new Linux version ${version} at channel ${channel} for arch ${arch}`);
+        }
+      }
+
+      return result;
+    }
+  },
+  windows: {
+    async callback() {
+      const result: Version[] = [];
+
+      const response = await fetch(ADGUARD_URL, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        method: "POST",
+        body: new URLSearchParams({
+          type: "url",
+          url: "https://apps.microsoft.com/detail/9ncbcszsjrsb",
+          ring: "RP",
+          lang: "en-US"
+        }).toString(),
+        ...COMMON_FETCH_OPTS
+      });
+
+      if (!response.ok) {
+        console.log("Couldn't retreive MS Store info from AdGuard");
+        checkers.windows.ratelimited = true;
+        return [];
+      }
+
+      const content = await response.text();
+      if (content.includes("The server returned an empty list")) {
+        console.log("Ratelimited by AdGuard");
+        checkers.windows.ratelimited = true;
+        return [];
+      }
+
+      const matches = content.matchAll(/<a\s+href="([^"]+)"[^>]*>SpotifyAB.SpotifyMusic_(.+?)_(arm64|x64)__[^<]+?\.appx/g);
+
+      for (const [_, url, version, arch] of Array.from(matches)) {
+        const previous = result.find((v) => v.arch === arch);
+        if (previous && compareVersionString(version, previous.version) === "newer") {
           continue;
         }
 
-        const pkg = parsePackages(await response.text()).filter((v) => v.package === "spotify-client")[0];
-        if (!pkg) {
-          console.log(`Empty package at channel ${channel} for arch ${arch}`);
-          continue;
-        }
-
-        const version = pkg.version.split(":")[1];
         result.push({
           arch,
-          channel,
-          os: "Linux",
-          url: `${SPOTIFY_REPO_BASE_URL}/${pkg.filename}`,
+          channel: "MS Store",
+          os: "Windows",
+          url,
           version
         });
 
-        console.log(`Added new Linux version ${version} at channel ${channel} for arch ${arch}`);
-      }
-    }
-
-    return result;
-  },
-  async windows() {
-    const result: Version[] = [];
-
-    const response = await fetch(ADGUARD_URL, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      method: "POST",
-      body: new URLSearchParams({
-        type: "url",
-        url: "https://apps.microsoft.com/detail/9ncbcszsjrsb",
-        ring: "RP",
-        lang: "en-US"
-      }).toString(),
-      ...COMMON_FETCH_OPTS
-    });
-
-    if (!response.ok) {
-      console.log("Couldn't retreive MS Store info from AdGuard");
-      checkers.windows.ratelimited = true;
-      return [];
-    }
-
-    const content = await response.text();
-    if (content.includes("The server returned an empty list")) {
-      console.log("Ratelimited by AdGuard");
-      checkers.windows.ratelimited = true;
-      return [];
-    }
-
-    const matches = content.matchAll(/<a\s+href="([^"]+)"[^>]*>SpotifyAB.SpotifyMusic_(.+?)_(arm64|x64)__[^<]+?\.appx/g);
-
-    for (const [_, url, version, arch] of Array.from(matches)) {
-      const previous = result.find((v) => v.arch === arch);
-      if (previous && compareVersionString(version, previous.version) === "newer") {
-        continue;
+        console.log(`Added new Windows version ${version} from MS Store for arch ${arch}`);
       }
 
-      result.push({
-        arch,
-        channel: "MS Store",
-        os: "Windows",
-        url,
-        version
-      });
-
-      console.log(`Added new Windows version ${version} from MS Store for arch ${arch}`);
+      return result;
     }
-
-    return result;
   },
-  async macos() {
-    // Empty here because we scan for MacOS installers later
-    return [];
+  macos: {
+    async callback() {
+      return [];
+    }
   }
 };
 
@@ -162,6 +167,8 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
     const checker: CheckerFunction = checkers[checkerId];
 
     try {
+      const batch = await checker.callback();
+
       if (checker.ratelimited) {
         if (!checker.timeout) {
           console.log(`Started ratelimit protection for ${checkerId}`);
@@ -177,7 +184,6 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
       }
 
       const newVersions: Version[] = [];
-      const batch = await checker();
       const previousBatch = getPreviousBatch(checkerId as Checker);
       const newBatch: Version[] = [];
 

@@ -1,5 +1,11 @@
 export type Checker = "windows" | "linux" | "android" | "macos";
 
+export type CheckerFunction = {
+  ratelimited?: boolean;
+  timeout?: NodeJS.Timeout;
+  callback(): Promise<Version[]>;
+};
+
 export type TranslationPlatform = "desktop" | "mobile";
 
 export type VersionComparison = "equal" | "older" | "newer";

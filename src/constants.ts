@@ -6,7 +6,8 @@ export const WRITE_NEW_TRANSLATIONS = new Boolean(process.env.WRITE_NEW_TRANSLAT
 export const DATA_PATH = path.join(process.cwd(), "data");
 export const MESSAGE_CHAR_LIMIT = 2000;
 
-export const APTOID_URL = "https://ws2-cache.aptoide.com/api/7/apps/search?cdn=web&query=spotify&limit=1&offset=0&store_name=aptoide-web";
+export const APTOIDE_URL =
+  "https://ws75.aptoide.com/api/7/apps/search?cdn=web&aab=1&query=spotify&limit=1&offset=0&store_name=aptoide-web&origin=SITE";
 export const SPOTIFY_REPO_BASE_URL = "https://repository-origin.spotify.com";
 export const ADGUARD_URL = "https://store.rg-adguard.net/api/GetFiles";
 export const SPOTIFY_INSTALLER_BASE_URL = "https://upgrade.scdn.co/upgrade/client";
