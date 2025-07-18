@@ -88,7 +88,14 @@ const checkers: Record<Checker, CheckerFunction> = {
 
       const response = await fetch(ADGUARD_URL, {
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
+          authority: "store.rg-adguard.net",
+          "content-type": "application/x-www-form-urlencoded",
+          accept: "*/*",
+          "accept-language": "ru,ru-RU;q=0.9,en;q=0.8",
+          dnt: "1",
+          origin: "https://store.rg-adguard.net",
+          priority: "u=1, i",
+          referer: "https://store.rg-adguard.net"
         },
         method: "POST",
         body: new URLSearchParams({
