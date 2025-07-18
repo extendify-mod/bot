@@ -95,7 +95,7 @@ async function getFullVersion(appx: Blob): Promise<string | null> {
   return match ? match[0] : null;
 }
 
-async function checkUrl(platform: Version, num: number): Promise<Version | null> {
+async function checkUrl(platform: Version, num: number): Promise<Version> {
   try {
     const url = platform.url.replace("{1}", num.toString());
     const res = await fetch(url, { method: "HEAD" });
@@ -105,9 +105,13 @@ async function checkUrl(platform: Version, num: number): Promise<Version | null>
       return platform;
     }
   } catch (e) {
-    console.error(e);
+    console.error(`Error on iteration ${num}, retrying in 5 seconds`);
   }
-  return null;
+  return new Promise((resolve) => {
+    setTimeout(async () => {
+      resolve(await checkUrl(platform, num));
+    }, 5000);
+  });
 }
 
 function getFirst(found: Version[]): Version[] {

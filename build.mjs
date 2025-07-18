@@ -43,7 +43,8 @@ gradle.on("exit", async () => {
     target: "esnext",
     outfile: "dist/index.js",
     minify: !WATCH,
-    treeShaking: true
+    treeShaking: true,
+    sourcemap: "inline"
   });
 
   if (WATCH) {
