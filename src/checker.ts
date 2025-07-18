@@ -102,7 +102,6 @@ const checkers: Record<Checker, CheckerFunction> = {
 
       if (!response.ok) {
         console.log("Couldn't retreive MS Store info from AdGuard");
-        checkers.windows.ratelimited = true;
         return [];
       }
 
