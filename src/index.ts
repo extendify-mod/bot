@@ -22,7 +22,7 @@ client.on("ready", () => {
 
   if (!interval) {
     sendMessages();
-    interval = setInterval(sendMessages, (DEVELOPMENT ? 1 : 15) * 60 * 1000);
+    interval = setInterval(sendMessages, (DEVELOPMENT ? 1 : 60) * 60 * 1000);
   }
 });
 

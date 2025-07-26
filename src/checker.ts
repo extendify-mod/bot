@@ -29,12 +29,12 @@ const checkers: Record<Checker, CheckerFunction> = {
         return [];
       }
 
-      console.log(`Added new Android version ${app.file.vername} from Aptoid`);
+      console.log(`Added new Android version ${app.file.vername} from Aptoide`);
 
       return [
         {
           arch: "AnyCPU",
-          channel: "Aptoid",
+          channel: "Aptoide",
           os: "Android",
           url: app.file.path,
           version: app.file.vername
@@ -56,7 +56,7 @@ const checkers: Record<Checker, CheckerFunction> = {
 
           if (!response.ok) {
             console.log(`Couldn't retreive latest app info for Linux (channel ${channel}, arch ${arch})`);
-            checkers.linux.ratelimited = true;
+            this.ratelimited = true;
             continue;
           }
 
@@ -88,14 +88,23 @@ const checkers: Record<Checker, CheckerFunction> = {
 
       const response = await fetch(ADGUARD_URL, {
         headers: {
-          authority: "store.rg-adguard.net",
-          "content-type": "application/x-www-form-urlencoded",
           accept: "*/*",
-          "accept-language": "ru,ru-RU;q=0.9,en;q=0.8",
-          dnt: "1",
-          origin: "https://store.rg-adguard.net",
+          "accept-language": "en-US,en;q=0.8",
+          "content-type": "application/x-www-form-urlencoded",
           priority: "u=1, i",
-          referer: "https://store.rg-adguard.net"
+          "sec-ch-ua": '"Not)A;Brand";v="8", "Chromium";v="138", "Brave";v="138"',
+          "sec-ch-ua-arch": '"x86"',
+          "sec-ch-ua-bitness": '"64"',
+          "sec-ch-ua-full-version-list": '"Not)A;Brand";v="8.0.0.0", "Chromium";v="138.0.0.0", "Brave";v="138.0.0.0"',
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-model": '""',
+          "sec-ch-ua-platform": '"Windows"',
+          "sec-ch-ua-platform-version": '"19.0.0"',
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-origin",
+          "sec-gpc": "1",
+          Referer: "https://store.rg-adguard.net/"
         },
         method: "POST",
         body: new URLSearchParams({
@@ -109,13 +118,14 @@ const checkers: Record<Checker, CheckerFunction> = {
 
       if (!response.ok) {
         console.log("Couldn't retreive MS Store info from AdGuard");
+        this.ratelimited = true;
         return [];
       }
 
       const content = await response.text();
       if (content.includes("The server returned an empty list")) {
         console.log("Ratelimited by AdGuard");
-        checkers.windows.ratelimited = true;
+        this.ratelimited = true;
         return [];
       }
 
@@ -183,7 +193,7 @@ export async function getNewVersions(): Promise<Record<Checker, Version[]>> {
               checker.ratelimited = false;
               checker.timeout = undefined;
             },
-            60.1 * 60 * 1000
+            120.1 * 60 * 1000
           );
         }
         continue;
