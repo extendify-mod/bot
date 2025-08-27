@@ -91,7 +91,7 @@ export async function scanInstallers(appx: Blob): Promise<Version[]> {
 
 async function getFullVersion(appx: Blob): Promise<string | null> {
   const zip = await JSZip.loadAsync(await appx.bytes());
-  const match = (await zip.file("Spotify.exe")?.async("string"))?.match(/(?<![\w\-])(\d+)\.(\d+)\.(\d+)\.(\d+)\.(g[0-9a-f]{8})(?![\w\-])/);
+  const match = (await zip.file("Spotify.dll")?.async("string"))?.match(/(?<![\w\-])(\d+)\.(\d+)\.(\d+)\.(\d+)\.(g[0-9a-f]{8})(?![\w\-])/);
   return match ? match[0] : null;
 }
 
